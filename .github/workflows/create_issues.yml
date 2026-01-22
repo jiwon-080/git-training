@@ -1,41 +1,43 @@
-name: "과제 제출용 이슈 자동화"
+name: "과제 제출 이슈 자동화"
 
 on:
-   workflow_dispatch:
+  workflow_dispatch:
     inputs:
       session_info:
-        description: '세션 정보 (예: 심화세션 8차시 시계열 ②)'
+        description: '세션 제목'
         required: true
         default: '00세션 0차시 과제'
+      requirements:
+        description: '사전과제 요구사항 (마크다운 내용 체크리스트)'
+        required: true
+        default: '- '
 
 jobs:
   create_issues:
     runs-on: ubuntu-latest
     steps:
-      - name: "이슈 생성 스크립트 실행"
+      - name: "이슈 생성"
         env:
           GH_TOKEN: ${{ github.token }}
+          REQUIREMENTS: ${{ github.event.inputs.requirements }}
         run: |
-          # 1. 학회원 명단
           members=("홍길동" "김철수" "이영희" "박민수")
 
-          # 2. 이슈 본문 내용
-          issue_body=$(cat <<EOF
+          for member in "${members[@]}"
+          do
+            # heredoc을 사용하여 본문 구성
+            issue_body=$(cat <<EOF
           ### 🔍 과제
           - [ ] assignment_{주제}.ipynb 파일 과제 수행
 
           ### 🔍 사전과제 요구사항
-          - [ ] 
-          - [ ] 
+          $REQUIREMENTS
 
           ### ✅ 과제 제출 확인 사항
           - [ ] 본인의 이번 세션 브랜치에서 작업하고 add, commit, push 했나요?
           EOF
           )
 
-          # 3. 이슈 자동 생성
-          for member in "${members[@]}"
-          do
             gh issue create \
               --title "[submit] ${{ github.event.inputs.session_info }}: ${member}" \
               --body "$issue_body" \

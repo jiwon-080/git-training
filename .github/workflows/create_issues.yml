@@ -16,6 +16,9 @@ jobs:
   create_issues:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
       - name: "이슈 생성"
         env:
           GH_TOKEN: ${{ github.token }}
@@ -25,7 +28,6 @@ jobs:
 
           for member in "${members[@]}"
           do
-            # heredoc을 사용하여 본문 구성
             issue_body=$(cat <<EOF
           ### 🔍 과제
           - [ ] assignment_{주제}.ipynb 파일 과제 수행

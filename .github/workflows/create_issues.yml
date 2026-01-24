@@ -4,13 +4,21 @@ on:
   workflow_dispatch:
     inputs:
       session_info:
-        description: '세션 제목'
+        description: '세션 제목 (예: 심화세션 0차시)'
         required: true
-        default: '00세션 0차시 과제'
+        default: '세션 0차시 과제'
+      assignment_name:
+        description: '과제 파일명 (예: assignment_ensemble.ipynb)'
+        required: true
+        default: 'assignment_{주제}.ipynb'
       requirements:
-        description: '사전과제 요구사항 (마크다운 내용 체크리스트)'
+        description: '과제 요구 사항 체크리스트 (줄바꿈으로 구분)'
         required: true
-        default: '- '
+        default: '내용을 입력하세요'
+
+permissions:
+  issues: write
+  contents: read
 
 jobs:
   create_issues:
@@ -23,25 +31,30 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           REQUIREMENTS: ${{ github.event.inputs.requirements }}
+          ASSIGNMENT_NAME: ${{ github.event.inputs.assignment_name }}
+          SESSION_INFO: ${{ github.event.inputs.session_info }}
         run: |
+          FORMATTED_REQ=$(echo -e "$REQUIREMENTS" | sed 's/^/- [ ] /')
+
           members=("홍길동" "김철수" "이영희" "박민수")
 
           for member in "${members[@]}"
           do
             issue_body=$(cat <<EOF
           ### 🔍 과제
-          - [ ] assignment_{주제}.ipynb 파일 과제 수행
+          - [ ] $ASSIGNMENT_NAME 파일 과제 수행
 
           ### 🔍 사전과제 요구사항
-          $REQUIREMENTS
+          $FORMATTED_REQ
 
           ### ✅ 과제 제출 확인 사항
-          - [ ] 본인의 이번 세션 브랜치에서 작업하고 add, commit, push 했나요?
+          - [ ] 본인의 브랜치에서 작업하고 add, commit, push 했나요?
+          - [ ] develop <- 본인 브랜치로 pull request 하고 있나요?
           EOF
           )
 
             gh issue create \
-              --title "[submit] ${{ github.event.inputs.session_info }}: ${member}" \
+              --title "[submit] $SESSION_INFO: ${member}" \
               --body "$issue_body" \
               --label "submit"
           done
